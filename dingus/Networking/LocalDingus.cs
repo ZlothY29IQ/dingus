@@ -1,41 +1,84 @@
-﻿using Photon.Pun;
-using ExitGames.Client.Photon;
-using UnityEngine;
+﻿using ExitGames.Client.Photon;
+using Photon.Pun;
 using Photon.Realtime;
+using UnityEngine;
 
-namespace dingus.Networking
+namespace dingus.Networking;
+
+public class LocalDingus : MonoBehaviour
 {
-    public class LocalDingus : MonoBehaviour
-    {
-        private float sendRate = 0.025f;
-        private float timer = 0f;
+    private const float      sendRate      = 0.1f;
+    private const float      moveThreshold = 0.001f;
+    private       Vector3    lastPos;
+    private       Quaternion lastRot;
 
-        void Update()
+    private float timer;
+    private bool  wasMoving;
+
+    private void Start()
+    {
+        lastPos = transform.position;
+        lastRot = transform.rotation;
+    }
+
+    private void Update()
+    {
+        timer += Time.deltaTime;
+
+        if (timer < sendRate)
+            return;
+
+        timer = 0f;
+
+        if (!NetworkSystem.Instance.InRoom)
+            return;
+
+        bool isMoving = HasMoved();
+
+        if (isMoving || wasMoving)
         {
-            timer += Time.deltaTime;
-            if (timer >= sendRate)
-            {
-                timer = 0f;
-                SendTransform();
-            }
+            SendTransform();
+            wasMoving = isMoving;
+        }
+    }
+
+    private bool HasMoved()
+    {
+        float posDiff = (transform.position - lastPos).sqrMagnitude;
+        float rotDiff = Quaternion.Angle(transform.rotation, lastRot);
+
+        bool moved = posDiff > moveThreshold || rotDiff > 0.1f;
+
+        if (moved)
+        {
+            lastPos = transform.position;
+            lastRot = transform.rotation;
         }
 
-        private void SendTransform()
-        {
-            if (!PhotonNetwork.InRoom) return;
+        return moved;
+    }
 
-            object[] data = new object[]
-            {
+    private void SendTransform()
+    {
+        int[] targetActors = DingusManager.Instance.GetDingusActorList();
+
+        if (targetActors.Length == 0)
+            return;
+
+        object[] data =
+        [
                 transform.position,
-                transform.rotation
-            };
+                transform.rotation,
+        ];
 
-            PhotonNetwork.RaiseEvent(
+        PhotonNetwork.RaiseEvent(
                 41,
                 data,
-                new RaiseEventOptions { Receivers = ReceiverGroup.Others },
+                new RaiseEventOptions
+                {
+                        TargetActors = targetActors,
+                },
                 SendOptions.SendUnreliable
-            );
-        }
+        );
     }
 }
