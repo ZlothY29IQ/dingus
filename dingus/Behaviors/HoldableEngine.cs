@@ -26,136 +26,136 @@ using dingus;
 using GorillaLocomotion;
 using UnityEngine;
 
-namespace DevHoldableEngine
+namespace DevHoldableEngine;
+
+public class DevHoldable : HoldableObject
 {
-    public class DevHoldable : HoldableObject
+    public bool        InHand;
+    public bool        InLeftHand;
+    public bool        PickUp;
+    public Rigidbody   Rigidbody;
+    public AudioClip   clip;
+    public AudioSource audioSource;
+    public Collider    boxColl;
+
+    public float Distance   = 0.2f;
+    public float ThrowForce = 1.75f;
+
+    public void Update()
     {
-        public bool        InHand;
-        public bool        InLeftHand;
-        public bool        PickUp;
-        public Rigidbody   Rigidbody;
-        public AudioClip   clip;
-        public AudioSource audioSource;
-        public Collider    boxColl;
+        bool leftGrip  = ControllerInputPoller.instance.leftGrab;
+        bool rightGrip = ControllerInputPoller.instance.rightGrab;
 
-        public float Distance   = 0.2f;
-        public float ThrowForce = 1.75f;
-
-        public void Update()
+        if (PickUp && leftGrip &&
+            Vector3.Distance(GTPlayer.Instance.LeftHand.controllerTransform.position, transform.position) < Distance &&
+            !InHand && EquipmentInteractor.instance.leftHandHeldEquipment == null)
         {
-            bool leftGrip  = ControllerInputPoller.instance.leftGrab;
-            bool rightGrip = ControllerInputPoller.instance.rightGrab;
+            InLeftHand = true;
+            InHand     = true;
+            transform.SetParent(GorillaTagger.Instance.offlineVRRig.leftHandTransform.parent);
 
-            if (PickUp && leftGrip &&
-                Vector3.Distance(GTPlayer.Instance.leftControllerTransform.position, transform.position) < Distance &&
-                !InHand && EquipmentInteractor.instance.leftHandHeldEquipment == null)
-            {
-                InLeftHand = true;
-                InHand     = true;
-                transform.SetParent(GorillaTagger.Instance.offlineVRRig.leftHandTransform.parent);
+            GorillaTagger.Instance.StartVibration(true, 0.1f, 0.05f);
+            EquipmentInteractor.instance.leftHandHeldEquipment = this;
 
-                GorillaTagger.Instance.StartVibration(true, 0.1f, 0.05f);
-                EquipmentInteractor.instance.leftHandHeldEquipment = this;
+            OnGrab(true);
+        }
+        else if (!leftGrip && InHand && InLeftHand)
+        {
+            InLeftHand = true;
+            InHand     = false;
+            transform.SetParent(null);
 
-                OnGrab(true);
-            }
-            else if (!leftGrip && InHand && InLeftHand)
-            {
-                InLeftHand = true;
-                InHand     = false;
-                transform.SetParent(null);
+            GorillaTagger.Instance.StartVibration(true, 0.1f, 0.05f);
+            EquipmentInteractor.instance.leftHandHeldEquipment = null;
 
-                GorillaTagger.Instance.StartVibration(true, 0.1f, 0.05f);
-                EquipmentInteractor.instance.leftHandHeldEquipment = null;
-
-                OnDrop(true);
-            }
-
-            if (PickUp && rightGrip &&
-                Vector3.Distance(GTPlayer.Instance.rightControllerTransform.position, transform.position) < Distance &&
-                !InHand && EquipmentInteractor.instance.rightHandHeldEquipment == null)
-            {
-                InLeftHand = false;
-                InHand     = true;
-                transform.SetParent(GorillaTagger.Instance.offlineVRRig.rightHandTransform.parent);
-
-                GorillaTagger.Instance.StartVibration(false, 0.1f, 0.05f);
-                EquipmentInteractor.instance.rightHandHeldEquipment = this;
-
-                OnGrab(false);
-            }
-            else if (!rightGrip && InHand && !InLeftHand)
-            {
-                InLeftHand = false;
-                InHand     = false;
-                transform.SetParent(null);
-
-                GorillaTagger.Instance.StartVibration(false, 0.1f, 0.05f);
-                EquipmentInteractor.instance.rightHandHeldEquipment = null;
-
-                OnDrop(false);
-            }
+            OnDrop(true);
         }
 
-        public override void OnGrab(InteractionPoint point, GameObject grabbingHand)
+        if (PickUp && rightGrip &&
+            Vector3.Distance(GTPlayer.Instance.RightHand.controllerTransform.position, transform.position) < Distance &&
+            !InHand && EquipmentInteractor.instance.rightHandHeldEquipment == null)
         {
-            bool isLeft = grabbingHand == GTPlayer.Instance.leftControllerTransform.gameObject;
-            OnGrab(isLeft);
+            InLeftHand = false;
+            InHand     = true;
+            transform.SetParent(GorillaTagger.Instance.offlineVRRig.rightHandTransform.parent);
+
+            GorillaTagger.Instance.StartVibration(false, 0.1f, 0.05f);
+            EquipmentInteractor.instance.rightHandHeldEquipment = this;
+
+            OnGrab(false);
+        }
+        else if (!rightGrip && InHand && !InLeftHand)
+        {
+            InLeftHand = false;
+            InHand     = false;
+            transform.SetParent(null);
+
+            GorillaTagger.Instance.StartVibration(false, 0.1f, 0.05f);
+            EquipmentInteractor.instance.rightHandHeldEquipment = null;
+
+            OnDrop(false);
+        }
+    }
+
+    public override void OnGrab(InteractionPoint point, GameObject grabbingHand)
+    {
+        bool isLeft = grabbingHand == GTPlayer.Instance.LeftHand.controllerTransform.gameObject;
+        OnGrab(isLeft);
+    }
+
+    public override void OnHover(InteractionPoint point, GameObject hoveringHand) { }
+
+    public override void DropItemCleanup()
+    {
+        if (InHand)
+        {
+            OnDrop(InLeftHand);
+            InHand     = false;
+            InLeftHand = false;
+        }
+    }
+
+    public virtual void OnGrab(bool isLeft)
+    {
+        if (Rigidbody != null)
+        {
+            Rigidbody.isKinematic = true;
+            Rigidbody.useGravity  = false;
         }
 
-        public override void OnHover(InteractionPoint point, GameObject hoveringHand) { }
-
-        public override void DropItemCleanup()
+        if (clip == null || audioSource == null || boxColl == null)
         {
-            if (InHand)
-            {
-                OnDrop(InLeftHand);
-                InHand     = false;
-                InLeftHand = false;
-            }
+            audioSource = gameObject.GetComponent<AudioSource>();
+            boxColl     = gameObject.GetComponent<BoxCollider>();
+            clip        = Plugin.bundle.LoadAsset<AudioClip>("wpn_select");
         }
 
-        public virtual void OnGrab(bool isLeft)
+        audioSource.PlayOneShot(clip, 1f);
+    }
+
+    public virtual void OnDrop(bool isLeft)
+    {
+        if (Rigidbody != null)
         {
-            if (Rigidbody != null)
+            GorillaVelocityEstimator gorillaVelocityEstimator = (isLeft
+                                                                         ? GTPlayer.Instance.LeftHand
+                                                                                .controllerTransform
+                                                                                .GetComponentInChildren<
+                                                                                         GorillaVelocityEstimator>()
+                                                                         : GTPlayer.Instance.RightHand
+                                                                                .controllerTransform
+                                                                                .GetComponentInChildren<
+                                                                                         GorillaVelocityEstimator>()) ??
+                                                                null;
+
+            if (gorillaVelocityEstimator != null)
             {
-                Rigidbody.isKinematic = true;
-                Rigidbody.useGravity  = false;
-            }
+                Rigidbody.isKinematic = false;
+                Rigidbody.useGravity  = true;
+                Rigidbody.velocity = gorillaVelocityEstimator.linearVelocity * ThrowForce
+                                   + GTPlayer.Instance.GetComponent<Rigidbody>().velocity;
 
-            if (clip == null || audioSource == null || boxColl == null)
-            {
-                audioSource = gameObject.GetComponent<AudioSource>();
-                boxColl     = gameObject.GetComponent<BoxCollider>();
-                clip        = Plugin.bundle.LoadAsset<AudioClip>("wpn_select");
-            }
-
-            audioSource.PlayOneShot(clip, 1f);
-        }
-
-        public virtual void OnDrop(bool isLeft)
-        {
-            if (Rigidbody != null)
-            {
-                GorillaVelocityEstimator gorillaVelocityEstimator = (isLeft
-                                                                             ? GTPlayer.Instance.leftControllerTransform
-                                                                                    .GetComponentInChildren<
-                                                                                             GorillaVelocityEstimator>()
-                                                                             : GTPlayer.Instance
-                                                                                    .rightControllerTransform
-                                                                                    .GetComponentInChildren<
-                                                                                             GorillaVelocityEstimator>()) ??
-                                                                    null;
-
-                if (gorillaVelocityEstimator != null)
-                {
-                    Rigidbody.isKinematic = false;
-                    Rigidbody.useGravity  = true;
-                    Rigidbody.velocity = gorillaVelocityEstimator.linearVelocity * ThrowForce
-                                       + GTPlayer.Instance.GetComponent<Rigidbody>().velocity;
-
-                    Rigidbody.angularVelocity = gorillaVelocityEstimator.angularVelocity;
-                }
+                Rigidbody.angularVelocity = gorillaVelocityEstimator.angularVelocity;
             }
         }
     }

@@ -2,32 +2,31 @@
 using UnityEngine;
 using Random = System.Random;
 
-namespace dingus.Behaviors
+namespace dingus.Behaviors;
+
+internal class DingusInjury : MonoBehaviour
 {
-    internal class DingusInjury : MonoBehaviour
+    private const           float           VELOCITY_FOR_IMPACT = 10f;
+    private const           float           IMPACT_VOLUME       = 1f;
+    private static readonly Random          rnd                 = new();
+    private readonly        List<AudioClip> audioClips          = new();
+    private                 AudioSource     audioSource;
+
+    private void Awake()
     {
-        private const           float           VELOCITY_FOR_IMPACT = 10f;
-        private const           float           IMPACT_VOLUME       = 1f;
-        private static readonly Random          rnd                 = new Random();
-        private readonly        List<AudioClip> audioClips          = new List<AudioClip>();
-        private                 AudioSource     audioSource;
+        audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard2"));
+        audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard3"));
+        audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard5"));
+        audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard6"));
+        audioSource = gameObject.GetComponent<AudioSource>();
+    }
 
-        private void Awake()
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.relativeVelocity.magnitude > VELOCITY_FOR_IMPACT)
         {
-            audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard2"));
-            audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard3"));
-            audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard5"));
-            audioClips.Add(Plugin.bundle.LoadAsset<AudioClip>("body_medium_impact_hard6"));
-            audioSource = gameObject.GetComponent<AudioSource>();
-        }
-
-        private void OnCollisionEnter(Collision collision)
-        {
-            if (collision.relativeVelocity.magnitude > VELOCITY_FOR_IMPACT)
-            {
-                int r = rnd.Next(audioClips.Count);
-                audioSource.PlayOneShot(audioClips[r], IMPACT_VOLUME);
-            }
+            int r = rnd.Next(audioClips.Count);
+            audioSource.PlayOneShot(audioClips[r], IMPACT_VOLUME);
         }
     }
 }

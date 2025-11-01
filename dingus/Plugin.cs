@@ -25,7 +25,7 @@ namespace dingus
         private static Texture2D   dingusIcon;
         private        bool        dragging;
         private        Vector2     dragOffset;
-        private        Rect        guiRect = new Rect(10, 10, 240, 270);
+        private        Rect        guiRect = new(10, 10, 240, 270);
         private        bool        muted;
         private        Vector3     ogDingusScale;
 
@@ -121,7 +121,7 @@ namespace dingus
             byte[] buffer = new byte[stream.Length];
             stream.Read(buffer, 0, buffer.Length);
 
-            Texture2D tex = new Texture2D(2, 2);
+            Texture2D tex = new(2, 2);
             tex.LoadImage(buffer);
 
             return tex;

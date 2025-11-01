@@ -10,8 +10,8 @@ namespace dingus.Networking
     {
         public static DingusManager Instance;
 
-        private readonly Dictionary<int, GameObject> remoteDinguses = new Dictionary<int, GameObject>();
-        private readonly List<int> dingusPlayers = [];
+        private readonly Dictionary<int, GameObject> remoteDinguses = new();
+        private readonly List<int>                   dingusPlayers  = [];
 
         private void Awake()
         {

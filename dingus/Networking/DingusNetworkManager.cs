@@ -10,7 +10,7 @@ namespace dingus.Networking
 
         public static void SetHasDingus()
         {
-            Hashtable props = new Hashtable
+            Hashtable props = new()
             {
                     { DINGUS_KEY, true },
             };
