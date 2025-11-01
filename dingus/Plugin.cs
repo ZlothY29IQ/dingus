@@ -13,7 +13,7 @@ using Utilla;
 
 namespace dingus
 {
-    [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
+    [BepInPlugin(Constants.GUID, Constants.Name, Constants.Version)]
     public class Plugin : BaseUnityPlugin
     {
         private static ConfigEntry<bool> enableSongByDefault;

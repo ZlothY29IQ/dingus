@@ -1,9 +1,9 @@
 ﻿namespace dingus
 {
-    internal class PluginInfo
+    internal class Constants
     {
         public const string GUID    = "gizmo.zlothy.dingus";
         public const string Name    = "dingus";
-        public const string Version = "1.1.4";
+        public const string Version = "1.1.5";
     }
 }

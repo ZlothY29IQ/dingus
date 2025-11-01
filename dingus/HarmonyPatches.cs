@@ -5,7 +5,7 @@ namespace dingus
 {
     public class HarmonyPatches
     {
-        public const   string  InstanceId = PluginInfo.GUID;
+        public const   string  InstanceId = Constants.GUID;
         private static Harmony instance;
 
         public static bool IsPatched { get; private set; }
